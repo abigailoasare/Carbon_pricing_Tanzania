@@ -1,0 +1,1631 @@
+# Authors: Laura Schürer and Abigail O. Asare
+
+# Email: laura.schuerer@uol.de and abigail.asare@uol.de
+
+# Date: # Date: 09/07/2024
+
+# Sys.getlocale()
+
+# Load relevant Packages------------------------------------------
+# library("cowplot")
+library("dplyr")
+library("data.table")
+library("foreign")
+library("ggsci")
+library("Hmisc")
+library("openxlsx")
+library("rattle")
+library("scales")
+library("tidyverse")
+library("weights")
+library("readr")
+library("readxl")
+library("ggrepel")
+library("colorspace")
+library(survey)
+library(ggforce)
+library(ggmagnify)
+library(ggfx)
+
+# Currency is in TSH
+# Year = 2020
+
+# Setup -------------------------------------------------------------------
+source("./00_setup.R")
+
+# Read Incidence data set --------------------------------------------------
+
+tza_final <-
+  read_csv(file.path(dir[["analysis"]], "inci_analysis_tza.csv"))
+
+tza_info <-
+  read_csv(file.path(dir[["analysis"]], "hh_information_tza.csv")) %>% 
+  mutate(Urban=ifelse(urban==1,"Rural","Urban")) %>% 
+  filter(!is.na(hh_id)) %>% 
+  filter(!is.na(hh_weights)) %>%
+  filter(!is.na(hh_size)) 
+
+Urban_New<-
+  data.frame(
+    "urban" = c(1, 2),
+    "Urban" = c("Rural", "Urban"),
+    urban_01 = c(0, 1)
+  )
+
+
+# National Schemes Ananlysis ---------------------------------------
+
+# Without Compensation ---------------------------------------------------
+
+func_0 <- function(inci_x) {
+  inci_y <- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    mutate(
+      tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+      tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+      population = hh_size * hh_weights
+    )
+  
+  no_households<- sum(inci_y$hh_weights)
+  no_population<- sum(inci_y$population)
+  tt_exp_CO2_all<-sum(inci_y$tt_exp_CO2)
+  tt_exp_CO2_within_all <- sum(inci_y$tt_exp_CO2_within)
+  
+  LST_CO2_per_hh<-tt_exp_CO2_all/no_households
+  LST_CO2_pc <- tt_exp_CO2_all/no_population
+  LST_CO2_within_per_hh<- tt_exp_CO2_within_all/no_households
+  LST_CO2_within_pc <- tt_exp_CO2_within_all/no_population  
+  
+  inci_y.1 <- inci_y %>%
+    mutate(
+      exp_pc_CO2_LST_hh = -(exp_pc_CO2 -(LST_CO2_per_hh/hh_size)),
+      exp_pc_CO2_LST_pc = -(exp_pc_CO2 - LST_CO2_pc),
+      exp_pc_CO2_within_LST_hh = -(exp_pc_CO2_within - (LST_CO2_within_per_hh/hh_size)),
+      exp_pc_CO2_within_LST_pc = -(exp_pc_CO2_within - (LST_CO2_within_pc)),
+      # Attention: Negative Values indicate positive budget change
+      burden_CO2_pc_LST_hh= exp_pc_CO2_LST_hh/hh_exp_USD_pc,
+      burden_CO2_pc_LST_pc= exp_pc_CO2_LST_pc/hh_exp_USD_pc,
+      burden_CO2_within_pc_LST_hh = exp_pc_CO2_within_LST_hh/hh_exp_USD_pc,
+      burden_CO2_within_pc_LST_pc = exp_pc_CO2_within_LST_pc/hh_exp_USD_pc,
+      exp_pc_CO2= -exp_pc_CO2,
+      exp_pc_CO2_within= -exp_pc_CO2_within,
+      burden_CO2_pc= -burden_CO2_pc,
+      burden_CO2_within_pc = -burden_CO2_within_pc
+    ) %>%
+    dplyr::select(hh_id,
+                  hh_weights,
+                  Urban,
+                  incg_5,
+                  starts_with("burden_"),
+                  starts_with("exp"))
+  
+  inci_y.2 <- inci_y.1 %>%
+    group_by(incg_5) %>%
+    summarise(
+      exp_pc_CO2= wtd.quantile(
+        exp_pc_CO2, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_LST_pc= wtd.quantile(
+        exp_pc_CO2_LST_pc, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_LST_hh= wtd.quantile(
+        exp_pc_CO2_LST_hh, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within= wtd.quantile(
+        exp_pc_CO2_within, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within_LST_pc = wtd.quantile(
+        exp_pc_CO2_within_LST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      exp_pc_CO2_within_LST_hh = wtd.quantile(
+        exp_pc_CO2_within_LST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      
+      
+      burden_CO2_pc_no_LST = wtd.quantile(
+        burden_CO2_pc, probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_LST_hh = wtd.quantile(
+        burden_CO2_pc_LST_hh,  probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_LST_pc = wtd.quantile(
+        burden_CO2_pc_LST_pc,  probs = 0.5, weights = hh_weights),
+      
+      burden_CO2_within_pc_no_LST = wtd.quantile(
+        burden_CO2_within_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_LST_hh = wtd.quantile(
+        burden_CO2_within_pc_LST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_LST_pc = wtd.quantile(
+        burden_CO2_within_pc_LST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      )
+    ) %>%
+    ungroup() %>%
+    dplyr::select(everything())
+  
+  list_0 <-
+    list("Full_df" = inci_y.1, "Summarised_df" = inci_y.2)
+  
+  return(list_0)
+  
+}
+
+tza_221 <- func_0(tza_final)$Full_df
+tza_222 <-func_0(tza_final)$Summarised_df
+
+###  NCP Boxplot function --------------------------------------------
+NCP_g <- tza_221 %>%
+  dplyr::select(hh_id, incg_5,Urban,burden_CO2_within_pc, hh_weights) %>% 
+  rename(burden_CO2_pc_CP_hh=burden_CO2_within_pc) %>% 
+  mutate(comp_type="NCP")
+
+
+# Compensation Schemes is for households not per person (not per-capita)----------
+
+## Lump Sum Tranfer (LST) Function -----------------------------------------------------------
+
+test<- tza_final %>%
+  dplyr::select(
+    hh_id,
+    hh_size,
+    hh_weights,
+    incg_5,
+    hh_exp_USD_pc,
+    starts_with("burden"),
+    starts_with("exp_")
+  ) %>%
+  mutate(
+    tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+    tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+    population = hh_size * hh_weights
+  )
+
+
+
+no_hh<- sum(test$hh_weights)
+no_poph<- sum(test$population)
+tt_expenditures_CO2_all<-sum(test$tt_exp_CO2)
+tt_expenditures_CO2_within_all <- sum(test$tt_exp_CO2_within)
+
+LST_g_hh<-tt_expenditures_CO2_all/no_hh
+LST_n_hh <- tt_expenditures_CO2_within_all/no_hh
+
+
+LST_g_pc<-tt_expenditures_CO2_all/no_poph
+LST_n_pc <- tt_expenditures_CO2_within_all/no_poph
+
+
+
+func_0_lst <- function(inci_x) {
+  inci_y <- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      incg_5,
+      hh_exp_USD_pc,
+      hh_exp_USD,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    mutate(
+      tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+      tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+      population = hh_size * hh_weights
+    )
+  
+  no_households<- sum(inci_y$hh_weights)
+  no_population<- sum(inci_y$population)
+  tt_exp_CO2_all<-sum(inci_y$tt_exp_CO2)
+  tt_exp_CO2_within_all <- sum(inci_y$tt_exp_CO2_within)
+  
+  LST_CO2_per_hh<-tt_exp_CO2_all/no_households
+  LST_CO2_pc <- tt_exp_CO2_all/no_population
+  LST_CO2_within_per_hh<- tt_exp_CO2_within_all/no_households
+  LST_CO2_within_pc <- tt_exp_CO2_within_all/no_population  
+  
+  inci_y.1 <- inci_y %>%
+    mutate(
+      exp_pc_CO2_LST_hh = -(exp_pc_CO2 -(LST_CO2_per_hh/hh_size)),
+      exp_pc_CO2_LST_pc = -(exp_pc_CO2 - LST_CO2_pc),
+      exp_pc_CO2_within_LST_hh = -(exp_pc_CO2_within - (LST_CO2_within_per_hh/hh_size)),
+      exp_pc_CO2_within_LST_pc = -(exp_pc_CO2_within - (LST_CO2_within_pc)),
+      # Attention: Negative Values indicate positive budget change
+      burden_CO2_pc_LST_hh= exp_pc_CO2_LST_hh/hh_exp_USD_pc,
+      burden_CO2_pc_LST_pc= exp_pc_CO2_LST_pc/hh_exp_USD_pc,
+      burden_CO2_within_pc_LST_hh = exp_pc_CO2_within_LST_hh/hh_exp_USD_pc,
+      burden_CO2_within_pc_LST_pc = exp_pc_CO2_within_LST_pc/hh_exp_USD_pc,
+      exp_pc_CO2= -exp_pc_CO2,
+      exp_pc_CO2_within= -exp_pc_CO2_within,
+      burden_CO2_pc= -burden_CO2_pc,
+      burden_CO2_within_pc = -burden_CO2_within_pc
+    ) %>%
+    dplyr::select(hh_id,
+                  hh_weights,
+                  Urban,
+                  incg_5,
+                  starts_with("burden_"),
+                  starts_with("exp"))
+  
+  inci_y.2 <- inci_y.1 %>%
+    group_by(incg_5) %>%
+    summarise(
+      exp_pc_CO2= wtd.quantile(
+        exp_pc_CO2, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_LST_pc= wtd.quantile(
+        exp_pc_CO2_LST_pc, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_LST_hh= wtd.quantile(
+        exp_pc_CO2_LST_hh, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within= wtd.quantile(
+        exp_pc_CO2_within, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within_LST_pc = wtd.quantile(
+        exp_pc_CO2_within_LST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      exp_pc_CO2_within_LST_hh = wtd.quantile(
+        exp_pc_CO2_within_LST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      
+      
+      burden_CO2_pc_no_LST = wtd.quantile(
+        burden_CO2_pc, probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_LST_hh = wtd.quantile(
+        burden_CO2_pc_LST_hh,  probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_LST_pc = wtd.quantile(
+        burden_CO2_pc_LST_pc,  probs = 0.5, weights = hh_weights),
+      
+      burden_CO2_within_pc_no_LST = wtd.quantile(
+        burden_CO2_within_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_LST_hh = wtd.quantile(
+        burden_CO2_within_pc_LST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_LST_pc = wtd.quantile(
+        burden_CO2_within_pc_LST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      )
+    ) %>%
+    ungroup() %>%
+    dplyr::select(everything())
+  
+  list_0 <-
+    list("Full_df" = inci_y.1, "Summarised_df" = inci_y.2)
+  
+  return(list_0)
+  
+}
+
+tza_221_lst <- func_0_lst(tza_final)$Full_df
+tza_222_lst <-func_0_lst(tza_final)$Summarised_df
+
+###  LST Boxplot function --------------------------------------------
+LST_g <- tza_221_lst %>%
+  dplyr::select(hh_id, incg_5,Urban,burden_CO2_within_pc_LST_hh, hh_weights) %>% 
+  rename(burden_CO2_pc_CP_hh=burden_CO2_within_pc_LST_hh) %>% 
+  mutate(comp_type="LST")
+
+## Targeted Transfer (TST) Function -----------------------------------------------------------
+
+# 0.6 for adults
+# 0.4 for children
+
+tza_info_1<-tza_info %>% 
+  dplyr::select(hh_id, access_ely_grid)
+
+test<- tza_final %>%
+  left_join(tza_info_1, by="hh_id", relationship="one-to-one")
+
+
+
+test<- tza_final %>%
+  dplyr::select(
+    hh_id,
+    hh_size,
+    hh_weights,
+    Urban,
+    adults,
+    children,
+    incg_5,
+    hh_exp_USD_pc,
+    starts_with("burden"),
+    starts_with("exp_")
+  ) %>%
+  mutate(
+    tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+    tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+    population = hh_size * hh_weights
+  )
+
+
+
+no_hh<- sum(test$hh_weights)
+no_poph<- sum(test$population)
+tt_expenditures_CO2_all<-sum(test$tt_exp_CO2)
+tt_expenditures_CO2_within_all <- sum(test$tt_exp_CO2_within)
+
+lst_g_hh<-tt_expenditures_CO2_all/no_hh
+lst_n_hh <- tt_expenditures_CO2_within_all/no_hh
+
+
+lst_g_pc<-tt_expenditures_CO2_all/no_poph
+lst_n_pc <- tt_expenditures_CO2_within_all/no_poph
+
+
+
+qui_123<-test %>%
+  dplyr::select(
+    hh_id,
+    hh_size,
+    hh_weights,
+    Urban,
+    adults,
+    children,
+    incg_5,
+    hh_exp_USD_pc,
+    starts_with("burden"),
+    starts_with("exp_")
+  ) %>%
+  filter(incg_5==1|incg_5==2|incg_5==3) %>% 
+  mutate(
+    population = hh_size * hh_weights
+  )  
+
+
+no_hh_qui_123<- sum(qui_123$hh_weights)
+no_pop_qui_123<- sum(qui_123$population)
+
+tg_qui_123_g_hh<-tt_expenditures_CO2_all/no_hh_qui_123
+tg_qui_123_n_hh <- tt_expenditures_CO2_within_all/no_hh_qui_123
+
+tg_qui_123_g_pc<-tt_expenditures_CO2_all/no_pop_qui_123
+tg_qui_123_n_pc <- tt_expenditures_CO2_within_all/no_pop_qui_123
+
+
+# National
+qui_123$tg_adults_g_hh<-ifelse(qui_123$incg_5==1|
+                                 qui_123$incg_5==2|
+                                 qui_123$incg_5==3 &
+                                 qui_123$adults>0,(0.6*tt_expenditures_CO2_all)/no_hh_qui_123,
+                               0)
+unique(qui_123$tg_adults_g_hh)
+
+qui_123$tg_child_g_hh<-ifelse(qui_123$incg_5==1|qui_123$incg_5==2|qui_123$incg_5==3&qui_123$children>0,(0.4*tt_expenditures_CO2_all)/no_hh_qui_123,0)
+unique(qui_123$tg_child_g_hh)
+
+qui_123$tg_both_g_hh<-qui_123$tg_adults_g_hh+qui_123$tg_child_g_hh
+
+
+# national
+qui_123$tg_adults_n_hh<-ifelse(qui_123$incg_5==1|qui_123$incg_5==2|qui_123$incg_5==3&qui_123$adults>0,(0.6*tt_expenditures_CO2_within_all)/no_hh_qui_123,0)
+unique(qui_123$tg_adults_n_hh)
+
+qui_123$tg_child_n_hh<-ifelse(qui_123$incg_5==1|qui_123$incg_5==2|qui_123$incg_5==3&qui_123$children>0,(0.4*tt_expenditures_CO2_within_all)/no_hh_qui_123,0)
+unique(qui_123$tg_child_n_hh)
+
+qui_123$tg_both_n_hh<-qui_123$tg_adults_n_hh+qui_123$tg_child_n_hh
+
+# per capita
+
+# National
+qui_123$tg_adults_g_pc<-ifelse(qui_123$incg_5==1|qui_123$incg_5==2|qui_123$incg_5==3&qui_123$adults>0,(0.6*tt_expenditures_CO2_all)/no_pop_qui_123,0)
+unique(qui_123$tg_adults_g_pc)
+
+qui_123$tg_child_g_pc<-ifelse(qui_123$incg_5==1|qui_123$incg_5==2|qui_123$incg_5==3&qui_123$children>0,(0.4*tt_expenditures_CO2_all)/no_pop_qui_123,0)
+
+unique(qui_123$tg_child_g_pc)
+
+qui_123$tg_both_g_pc<-qui_123$tg_adults_g_pc+qui_123$tg_child_g_pc
+
+
+# national
+qui_123$tg_adults_n_pc<-ifelse(qui_123$incg_5==1|qui_123$incg_5==2|qui_123$incg_5==3&qui_123$adults>0,(0.6*tt_expenditures_CO2_within_all)/no_pop_qui_123,0)
+unique(qui_123$tg_adults_n_pc)
+
+qui_123$tg_child_n_pc<-ifelse(qui_123$incg_5==1|qui_123$incg_5==2|qui_123$incg_5==3&qui_123$children>0,(0.4*tt_expenditures_CO2_within_all)/no_pop_qui_123,0)
+unique(qui_123$tg_child_n_pc)
+
+qui_123$tg_both_n_pc<-qui_123$tg_adults_n_pc+qui_123$tg_child_n_pc
+
+
+
+### TST Transfer function
+func_0_tg_q123 <- function(inci_x) {
+  
+  
+  inci_x<- inci_x %>%
+    left_join(tza_info_1, by="hh_id", relationship="one-to-one") 
+  
+  inci_y <- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      adults,
+      children,
+      access_ely_grid,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    mutate(
+      tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+      tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+    )
+  
+  
+  test_qui_123<- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      adults,
+      children,
+      access_ely_grid,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    filter(incg_5==1|incg_5==2|incg_5==3) %>% 
+    mutate(
+      population = hh_size * hh_weights
+    ) 
+  
+  
+  
+  no_hh_qui_123<- sum(test_qui_123$hh_weights)
+  no_pop_qui_123<- sum(test_qui_123$population)
+  
+  tt_exp_CO2_all<-sum(inci_y$tt_exp_CO2)
+  tt_exp_CO2_within_all <- sum(inci_y$tt_exp_CO2_within)
+  
+  TST_CO2_per_hh<-tt_exp_CO2_all/no_hh_qui_123
+  TST_CO2_pc <- tt_exp_CO2_all/no_pop_qui_123
+  TST_CO2_within_per_hh<- tt_exp_CO2_within_all/no_hh_qui_123
+  TST_CO2_within_pc <- tt_exp_CO2_within_all/no_pop_qui_123 
+  
+  inci_y.1 <- inci_y %>%
+    mutate(
+      exp_pc_CO2_TST_ad = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0,
+                                 (-(exp_pc_CO2 -(0.6*(TST_CO2_per_hh/hh_size)))),
+                                 0),
+      exp_pc_CO2_TST_ch = ifelse(incg_5==1|incg_5==2|incg_5==3&children>0,
+                                 (-(exp_pc_CO2 -(0.4*(TST_CO2_per_hh/hh_size)))),
+                                 0),
+      exp_pc_CO2_TST_hh = exp_pc_CO2_TST_ad + exp_pc_CO2_TST_ch,
+      exp_pc_CO2_TST_hh = ifelse(exp_pc_CO2_TST_hh==0,
+                                 -exp_pc_CO2,
+                                 exp_pc_CO2_TST_hh),
+      exp_pc_CO2_TST_ad_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0,
+                                    (-(exp_pc_CO2 - (0.6*TST_CO2_pc))),
+                                    0),
+      exp_pc_CO2_TST_ch_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&children>0,
+                                    (-(exp_pc_CO2 - (0.4*TST_CO2_pc))), 
+                                    0),
+      exp_pc_CO2_TST_pc = exp_pc_CO2_TST_ad_pc + exp_pc_CO2_TST_ch_pc,
+      exp_pc_CO2_TST_pc = ifelse(exp_pc_CO2_TST_pc==0,
+                                 -exp_pc_CO2,
+                                 exp_pc_CO2_TST_pc),
+      exp_pc_CO2_within_TST_ad = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0,
+                                        (-(exp_pc_CO2_within - (0.6*(TST_CO2_within_per_hh/hh_size)))),
+                                        0),
+      exp_pc_CO2_within_TST_ch= ifelse(incg_5==1|incg_5==2|incg_5==3&children>0,
+                                       (-(exp_pc_CO2_within - (0.4*(TST_CO2_within_per_hh/hh_size)))),
+                                       0),
+      exp_pc_CO2_within_TST_hh = exp_pc_CO2_within_TST_ad + exp_pc_CO2_within_TST_ch,
+      exp_pc_CO2_within_TST_hh = ifelse(exp_pc_CO2_within_TST_hh==0,
+                                        -exp_pc_CO2_within,
+                                        exp_pc_CO2_within_TST_hh),
+      exp_pc_CO2_within_TST_ad_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0,
+                                           (-(exp_pc_CO2_within - (0.6*TST_CO2_within_pc))),
+                                           0),
+      exp_pc_CO2_within_TST_ch_pc= ifelse(incg_5==1|incg_5==2|incg_5==3&children>0,
+                                          (-(exp_pc_CO2_within - (0.4*TST_CO2_within_pc))),
+                                          0),
+      exp_pc_CO2_within_TST_pc = exp_pc_CO2_within_TST_ad_pc + exp_pc_CO2_within_TST_ch_pc,
+      exp_pc_CO2_within_TST_pc = ifelse(exp_pc_CO2_within_TST_pc==0,
+                                        -exp_pc_CO2_within,
+                                        exp_pc_CO2_within_TST_pc
+      ),
+      # Attention: Negative Values indicate positive budget change
+      burden_CO2_pc_TST_hh= exp_pc_CO2_TST_hh/hh_exp_USD_pc,
+      burden_CO2_pc_TST_pc=exp_pc_CO2_TST_pc/hh_exp_USD_pc,
+      burden_CO2_within_pc_TST_hh =exp_pc_CO2_within_TST_hh/hh_exp_USD_pc,
+      burden_CO2_within_pc_TST_pc =exp_pc_CO2_within_TST_pc/hh_exp_USD_pc,
+      exp_pc_CO2= -exp_pc_CO2,
+      exp_pc_CO2_within= -exp_pc_CO2_within,
+      burden_CO2_pc= -burden_CO2_pc,
+      burden_CO2_within_pc = -burden_CO2_within_pc
+    ) %>%
+    dplyr::select(hh_id,
+                  hh_weights,
+                  Urban,
+                  incg_5,
+                  starts_with("burden_"),
+                  starts_with("exp"))
+  
+  inci_y.2 <- inci_y.1 %>%
+    group_by(incg_5) %>%
+    summarise(
+      exp_pc_CO2= wtd.quantile(
+        exp_pc_CO2, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_TST_pc= wtd.quantile(
+        exp_pc_CO2_TST_pc, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_TST_hh= wtd.quantile(
+        exp_pc_CO2_TST_hh, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within= wtd.quantile(
+        exp_pc_CO2_within, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within_TST_pc = wtd.quantile(
+        exp_pc_CO2_within_TST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      exp_pc_CO2_within_TST_hh = wtd.quantile(
+        exp_pc_CO2_within_TST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      
+      
+      burden_CO2_pc_no_TST = wtd.quantile(
+        burden_CO2_pc, 
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_pc_TST_hh = wtd.quantile(
+        burden_CO2_pc_TST_hh, 
+        probs = 0.5, 
+        weights = hh_weights
+      ),
+      burden_CO2_pc_TST_pc = wtd.quantile(
+        burden_CO2_pc_TST_pc, 
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      
+      burden_CO2_within_pc_no_TST = wtd.quantile(
+        burden_CO2_within_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_TST_hh = wtd.quantile(
+        burden_CO2_within_pc_TST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_TST_pc = wtd.quantile(
+        burden_CO2_within_pc_TST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      )
+    ) %>%
+    ungroup() %>%
+    dplyr::select(everything())
+  
+  list_0 <-
+    list("Full_df" = inci_y.1, "Summarised_df" = inci_y.2)
+  
+  return(list_0)
+  
+}
+
+
+tza_221_tg_q123 <- func_0_tg_q123(tza_final)$Full_df
+tza_222_tg_q123 <-func_0_tg_q123(tza_final)$Summarised_df
+
+
+###  TST Boxplot function --------------------------------------------
+TST_g <- tza_221_tg_q123 %>%
+  dplyr::select(hh_id, incg_5,Urban,burden_CO2_within_pc_TST_hh, hh_weights) %>% 
+  rename(burden_CO2_pc_CP_hh=burden_CO2_within_pc_TST_hh) %>% 
+  mutate(comp_type="TST")
+
+
+
+
+
+## Solar Electricity (EST) Transfer -------------------------------------------
+
+tza_info_1<-tza_info %>% 
+  dplyr::select(hh_id, access_ely_grid)
+
+test<- tza_final %>%
+  left_join(tza_info_1, by="hh_id", relationship="one-to-one")
+
+no_ely<-test %>% 
+  filter(access_ely_grid==1) 
+
+
+tza_info_1<-tza_info %>%
+  dplyr::select(hh_id, access_ely_grid)
+
+test_noely<- tza_final %>%
+  left_join(tza_info_1, by="hh_id", relationship="one-to-one") %>%
+  filter(access_ely_grid==0)
+
+test_noely<- test_noely %>%
+  dplyr::select(
+    hh_id,
+    hh_size,
+    hh_weights,
+    Urban,
+    access_ely_grid,
+    incg_5,
+    hh_exp_USD_pc,
+    starts_with("burden"),
+    starts_with("exp_")
+  ) %>%
+  mutate(
+    #tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+    #tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+    population = hh_size * hh_weights
+  )
+
+
+
+no_hh_noely<- sum(test_noely$hh_weights)
+no_poph_noely<- sum(test_noely$population)
+
+
+
+solar_noely_g_hh<-tt_expenditures_CO2_all/no_hh_noely
+solar_noely_n_hh <- tt_expenditures_CO2_within_all/no_hh_noely
+
+
+solar_noely_g_pc<-tt_expenditures_CO2_all/no_poph_noely
+solar_noely_n_pc <- tt_expenditures_CO2_within_all/no_poph_noely
+
+
+func_0_est <- function(inci_x) {
+  
+  tza_info_1<-tza_info %>% 
+    dplyr::select(hh_id, access_ely_grid)
+  
+  inci_x<- inci_x %>%
+    left_join(tza_info_1, by="hh_id", relationship="one-to-one") 
+  
+  inci_y <- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      access_ely_grid,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    mutate(
+      tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+      tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+      #population = hh_size * hh_weights
+    )
+  
+  test_noely<- tza_final %>%
+    left_join(tza_info_1, by="hh_id", relationship="one-to-one") %>% 
+    filter(access_ely_grid==0) 
+  
+  test_noely<- test_noely %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      access_ely_grid,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    mutate(
+      #tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+      #tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+      population = hh_size * hh_weights
+    )
+  
+  
+  
+  no_hh_noely<- sum(test_noely$hh_weights)
+  no_pop_noely<- sum(test_noely$population)
+  
+  tt_exp_CO2_all<-sum(inci_y$tt_exp_CO2)
+  tt_exp_CO2_within_all <- sum(inci_y$tt_exp_CO2_within)
+  
+  EST_CO2_per_hh<-tt_exp_CO2_all/no_hh_noely
+  EST_CO2_pc <- tt_exp_CO2_all/no_pop_noely
+  EST_CO2_within_per_hh<- tt_exp_CO2_within_all/no_hh_noely
+  EST_CO2_within_pc <- tt_exp_CO2_within_all/no_pop_noely 
+  
+  inci_y.1 <- inci_y %>%
+    mutate(
+      exp_pc_CO2_EST_hh = ifelse(access_ely_grid==0,
+                                 (-(exp_pc_CO2 -(EST_CO2_per_hh/hh_size))),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_EST_pc = ifelse(access_ely_grid==0,
+                                 (-(exp_pc_CO2 - EST_CO2_pc)),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_within_EST_hh = ifelse(access_ely_grid==0,
+                                        (-(exp_pc_CO2_within - (EST_CO2_within_per_hh/hh_size))),
+                                        -exp_pc_CO2_within),
+      exp_pc_CO2_within_EST_pc = ifelse(access_ely_grid==0,
+                                        (-(exp_pc_CO2_within - (EST_CO2_within_pc))),
+                                        -exp_pc_CO2_within),
+      # Attention: Negative Values indicate positive budget change
+      burden_CO2_pc_EST_hh= exp_pc_CO2_EST_hh/hh_exp_USD_pc,
+      burden_CO2_pc_EST_pc= exp_pc_CO2_EST_pc/hh_exp_USD_pc,
+      burden_CO2_within_pc_EST_hh =exp_pc_CO2_within_EST_hh/hh_exp_USD_pc,
+      burden_CO2_within_pc_EST_pc =exp_pc_CO2_within_EST_pc/hh_exp_USD_pc,
+      exp_pc_CO2= -exp_pc_CO2,
+      exp_pc_CO2_within= -exp_pc_CO2_within,
+      burden_CO2_pc= -burden_CO2_pc,
+      burden_CO2_within_pc = -burden_CO2_within_pc
+    ) %>%
+    dplyr::select(hh_id,
+                  hh_weights,
+                  Urban,
+                  incg_5,
+                  starts_with("burden_"),
+                  starts_with("exp"))
+  
+  inci_y.2 <- inci_y.1 %>%
+    group_by(incg_5) %>%
+    summarise(
+      exp_pc_CO2= wtd.quantile(
+        exp_pc_CO2, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_EST_pc= wtd.quantile(
+        exp_pc_CO2_EST_pc, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_EST_hh= wtd.quantile(
+        exp_pc_CO2_EST_hh, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within= wtd.quantile(
+        exp_pc_CO2_within, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within_EST_pc = wtd.quantile(
+        exp_pc_CO2_within_EST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      exp_pc_CO2_within_EST_hh = wtd.quantile(
+        exp_pc_CO2_within_EST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      
+      
+      burden_CO2_pc_no_LST = wtd.quantile(
+        burden_CO2_pc, probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_EST_hh = wtd.quantile(
+        burden_CO2_pc_EST_hh,  probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_EST_pc = wtd.quantile(
+        burden_CO2_pc_EST_pc,  probs = 0.5, weights = hh_weights),
+      
+      burden_CO2_within_pc_no_LST = wtd.quantile(
+        burden_CO2_within_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_EST_hh = wtd.quantile(
+        burden_CO2_within_pc_EST_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_EST_pc = wtd.quantile(
+        burden_CO2_within_pc_EST_pc,
+        probs = 0.5,
+        weights = hh_weights
+      )
+    ) %>%
+    ungroup() %>%
+    dplyr::select(everything())
+  
+  list_0 <-
+    list("Full_df" = inci_y.1, "Summarised_df" = inci_y.2)
+  
+  return(list_0)
+  
+}
+
+
+tza_221_est <- func_0_est(tza_final)$Full_df
+tza_222_est <-func_0_est(tza_final)$Summarised_df
+
+
+
+###  EST Boxplot function --------------------------------------------
+EST_g <- tza_221_est %>%
+  dplyr::select(hh_id, incg_5,Urban,burden_CO2_within_pc_EST_hh, hh_weights) %>% 
+  rename(burden_CO2_pc_CP_hh=burden_CO2_within_pc_EST_hh) %>% 
+  mutate(comp_type="EST")
+
+
+
+
+## Solar Cooker (SCT) Transfer ------------------------------------
+
+tza_info_1<-tza_info %>% 
+  dplyr::select(hh_id, cooking_fuel)%>% 
+  mutate(hhnocl_ckfuel=ifelse(cooking_fuel==3| cooking_fuel==4| cooking_fuel==7,0,1)) %>% 
+  dplyr::select(hh_id,hhnocl_ckfuel)
+
+unique(tza_info_1$hhnocl_ckfuel)
+
+test<- tza_final %>%
+  left_join(tza_info_1, by="hh_id", relationship="one-to-one")
+
+no_nock<-test %>% 
+  filter(hhnocl_ckfuel==1) 
+
+test<- tza_final %>%
+  dplyr::select(
+    hh_id,
+    hh_size,
+    hh_weights,
+    Urban,
+    incg_5,
+    hh_exp_USD_pc,
+    starts_with("burden"),
+    starts_with("exp_")
+  ) %>%
+  mutate(
+    tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+    tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+    population = hh_size * hh_weights
+  )
+
+
+
+no_hh<- sum(test$hh_weights)
+no_poph<- sum(test$population)
+tt_expenditures_CO2_all<-sum(test$tt_exp_CO2)
+tt_expenditures_CO2_within_all <- sum(test$tt_exp_CO2_within)
+
+LST_g_hh<-tt_expenditures_CO2_all/no_hh
+LST_n_hh <- tt_expenditures_CO2_within_all/no_hh
+
+
+LST_g_pc<-tt_expenditures_CO2_all/no_poph
+LST_n_pc <- tt_expenditures_CO2_within_all/no_poph
+
+
+tza_info_1<-tza_info_1 %>%
+  dplyr::select(hh_id, hhnocl_ckfuel)
+
+test_nock<- tza_final %>%
+  left_join(tza_info_1, by="hh_id", relationship="one-to-one") %>%
+  filter(hhnocl_ckfuel==1)
+
+test_nock<- test_nock %>%
+  dplyr::select(
+    hh_id,
+    hh_size,
+    hh_weights,
+    Urban,
+    hhnocl_ckfuel,
+    incg_5,
+    hh_exp_USD_pc,
+    starts_with("burden"),
+    starts_with("exp_")
+  ) %>%
+  filter(incg_5==1|incg_5==2|incg_5==3) %>% 
+  mutate(
+    population = hh_size * hh_weights
+  )
+
+
+
+no_hh_nock<- sum(test_nock$hh_weights)
+no_poph_nock<- sum(test_nock$population)
+
+
+
+solar_nock_g_hh<-tt_expenditures_CO2_all/no_hh_nock
+solar_nock_n_hh <- tt_expenditures_CO2_within_all/no_hh_nock
+
+
+solar_nock_g_pc<-tt_expenditures_CO2_all/no_poph_nock
+solar_nock_n_pc <- tt_expenditures_CO2_within_all/no_poph_nock
+
+
+### SCT Transfer Function 
+func_0_nock <- function(inci_x) {
+  
+  tza_info_1<-tza_info %>% 
+    dplyr::select(hh_id, cooking_fuel)%>% 
+    mutate(hhnocl_ckfuel=ifelse(cooking_fuel==3| cooking_fuel==4| cooking_fuel==7,0,1)) %>% 
+    dplyr::select(hh_id,hhnocl_ckfuel)
+  
+  inci_x<- inci_x %>%
+    left_join(tza_info_1, by="hh_id", relationship="one-to-one") 
+  
+  inci_y <- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      hhnocl_ckfuel,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    mutate(
+      tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+      tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+    )
+  
+  test_nock<- tza_final %>%
+    left_join(tza_info_1, by="hh_id", relationship="one-to-one") %>% 
+    filter(hhnocl_ckfuel==1) 
+  
+  test_nock<- test_nock %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      hhnocl_ckfuel,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    filter(incg_5==1|incg_5==2|incg_5==3) %>% 
+    mutate(
+      population = hh_size * hh_weights
+    )
+  
+  
+  
+  no_hh_nock<- sum(test_nock$hh_weights)
+  no_pop_nock<- sum(test_nock$population)
+  
+  tt_exp_CO2_all<-sum(inci_y$tt_exp_CO2)
+  tt_exp_CO2_within_all <- sum(inci_y$tt_exp_CO2_within)
+  
+  SCT_CO2_per_hh<-tt_exp_CO2_all/no_hh_nock
+  SCT_CO2_pc <- tt_exp_CO2_all/no_pop_nock
+  SCT_CO2_within_per_hh<- tt_exp_CO2_within_all/no_hh_nock
+  SCT_CO2_within_pc <- tt_exp_CO2_within_all/no_pop_nock 
+  
+  inci_y.1 <- inci_y %>%
+    mutate(
+      exp_pc_CO2_SCT_hh = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                 (-(exp_pc_CO2 -(SCT_CO2_per_hh/hh_size))),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_SCT_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                 (-(exp_pc_CO2 - SCT_CO2_pc)),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_within_SCT_hh = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                        (-(exp_pc_CO2_within - (SCT_CO2_within_per_hh/hh_size))),
+                                        -exp_pc_CO2_within),
+      exp_pc_CO2_within_SCT_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                        (-(exp_pc_CO2_within - (SCT_CO2_within_pc))),
+                                        -exp_pc_CO2_within),
+      # Attention: Negative Values indicate positive budget change
+      burden_CO2_pc_SCT_hh=exp_pc_CO2_SCT_hh/hh_exp_USD_pc,
+      burden_CO2_pc_SCT_pc= exp_pc_CO2_SCT_pc/hh_exp_USD_pc,
+      burden_CO2_within_pc_SCT_hh = exp_pc_CO2_within_SCT_hh/hh_exp_USD_pc,
+      burden_CO2_within_pc_SCT_pc =exp_pc_CO2_within_SCT_pc/hh_exp_USD_pc,
+      exp_pc_CO2= -exp_pc_CO2,
+      exp_pc_CO2_within= -exp_pc_CO2_within,
+      burden_CO2_pc= -burden_CO2_pc,
+      burden_CO2_within_pc = -burden_CO2_within_pc
+    ) %>%
+    dplyr::select(hh_id,
+                  hh_weights,
+                  Urban,
+                  incg_5,
+                  starts_with("burden_"),
+                  starts_with("exp"))
+  
+  inci_y.2 <- inci_y.1 %>%
+    group_by(incg_5) %>%
+    summarise(
+      exp_pc_CO2= wtd.quantile(
+        exp_pc_CO2, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_SCT_pc= wtd.quantile(
+        exp_pc_CO2_SCT_pc, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_SCT_hh= wtd.quantile(
+        exp_pc_CO2_SCT_hh, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within= wtd.quantile(
+        exp_pc_CO2_within, 
+        probs = 0.5, 
+        weights = hh_weights),
+      exp_pc_CO2_within_SCT_pc = wtd.quantile(
+        exp_pc_CO2_within_SCT_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      exp_pc_CO2_within_SCT_hh = wtd.quantile(
+        exp_pc_CO2_within_SCT_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      
+      
+      burden_CO2_pc_no_LST = wtd.quantile(
+        burden_CO2_pc, probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_SCT_hh = wtd.quantile(
+        burden_CO2_pc_SCT_hh,  probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_SCT_pc = wtd.quantile(
+        burden_CO2_pc_SCT_pc,  probs = 0.5, weights = hh_weights),
+      
+      burden_CO2_within_pc_no_LST = wtd.quantile(
+        burden_CO2_within_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_SCT_hh = wtd.quantile(
+        burden_CO2_within_pc_SCT_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_SCT_pc = wtd.quantile(
+        burden_CO2_within_pc_SCT_pc,
+        probs = 0.5,
+        weights = hh_weights
+      )
+    ) %>%
+    ungroup() %>%
+    dplyr::select(everything())
+  
+  list_0 <-
+    list("Full_df" = inci_y.1, "Summarised_df" = inci_y.2)
+  
+  return(list_0)
+  
+}
+
+
+tza_221_nock <- func_0_nock(tza_final)$Full_df
+tza_222_nock <-func_0_nock(tza_final)$Summarised_df
+
+###  SCT Boxplot function --------------------------------------------
+SCT_g <- tza_221_nock %>%
+  dplyr::select(hh_id, incg_5,Urban,burden_CO2_within_pc_SCT_hh, hh_weights) %>% 
+  rename(burden_CO2_pc_CP_hh=burden_CO2_within_pc_SCT_hh) %>% 
+  mutate(comp_type="SCT")
+
+
+
+## Solar Cooker & Targeted Transfer (CMT) ------------------------------------------
+
+func_0_cmt <- function(inci_x) {
+  
+  tza_info_1<-tza_info %>%
+    dplyr::select(hh_id, cooking_fuel)%>%
+    mutate(hhnocl_ckfuel=ifelse(cooking_fuel==3| cooking_fuel==4| cooking_fuel==7,0,1)) %>%
+    dplyr::select(hh_id,hhnocl_ckfuel)
+  
+  inci_x<- inci_x %>%
+    left_join(tza_info_1, by="hh_id", relationship="one-to-one")
+  
+  inci_y <- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      adults,
+      children,
+      hhnocl_ckfuel,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    mutate(
+      tt_exp_CO2 = exp_pc_CO2 * hh_size * hh_weights,
+      tt_exp_CO2_within = exp_pc_CO2_within*hh_size*hh_weights,
+    )
+  
+  test_nock<- tza_final %>%
+    left_join(tza_info_1, by="hh_id", relationship="one-to-one") %>%
+    filter(hhnocl_ckfuel==1)
+  
+  test_nock<- test_nock %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      hhnocl_ckfuel,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    filter(incg_5==1|incg_5==2|incg_5==3) %>%
+    mutate(
+      population = hh_size * hh_weights
+    )
+  
+  
+  
+  no_hh_nock<- sum(test_nock$hh_weights)
+  no_pop_nock<- sum(test_nock$population)
+  
+  tt_exp_CO2_all<-sum(inci_y$tt_exp_CO2)
+  tt_exp_CO2_within_all <- sum(inci_y$tt_exp_CO2_within)
+  
+  SCT_CO2_per_hh<-tt_exp_CO2_all/no_hh_nock
+  SCT_CO2_pc <- tt_exp_CO2_all/no_pop_nock
+  SCT_CO2_within_per_hh<- tt_exp_CO2_within_all/no_hh_nock
+  SCT_CO2_within_pc <- tt_exp_CO2_within_all/no_pop_nock
+  
+  
+  test_qui_123<- inci_x %>%
+    dplyr::select(
+      hh_id,
+      hh_size,
+      hh_weights,
+      Urban,
+      adults,
+      children,
+      incg_5,
+      hh_exp_USD_pc,
+      starts_with("burden"),
+      starts_with("exp_")
+    ) %>%
+    filter(incg_5==1|incg_5==2|incg_5==3) %>%
+    mutate(
+      population = hh_size * hh_weights
+    )
+  
+  
+  
+  no_hh_qui_123<- sum(test_qui_123$hh_weights)
+  no_pop_qui_123<- sum(test_qui_123$population)
+  
+  TST_CO2_per_hh<-tt_exp_CO2_all/no_hh_qui_123
+  TST_CO2_pc <- tt_exp_CO2_all/no_pop_qui_123
+  TST_CO2_within_per_hh<- tt_exp_CO2_within_all/no_hh_qui_123
+  TST_CO2_within_pc <- tt_exp_CO2_within_all/no_pop_qui_123
+  
+  inci_y.1 <- inci_y %>%
+    mutate(
+      exp_pc_CO2_CMT_hh = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                 (-(exp_pc_CO2 -(SCT_CO2_per_hh/hh_size))),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_CMT_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                 (-(exp_pc_CO2 - SCT_CO2_pc)),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_within_CMT_hh = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                        (-(exp_pc_CO2_within - (SCT_CO2_within_per_hh/hh_size))),
+                                        -exp_pc_CO2_within),
+      exp_pc_CO2_within_CMT_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&hhnocl_ckfuel==1,
+                                        (-(exp_pc_CO2_within - (SCT_CO2_within_pc))),
+                                        -exp_pc_CO2_within)
+    ) %>% 
+    mutate(
+      exp_pc_CO2_CMT_ad = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0&hhnocl_ckfuel==0,
+                                 (-(exp_pc_CO2 -(0.6*(TST_CO2_per_hh/hh_size)))),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_CMT_ch = ifelse(incg_5==1|incg_5==2|incg_5==3&children>0&hhnocl_ckfuel==0,
+                                 (-(exp_pc_CO2 -(0.4*(TST_CO2_per_hh/hh_size)))),
+                                 -exp_pc_CO2),
+      exp_pc_CO2_CMT_hh = ifelse(exp_pc_CO2_CMT_hh==0,
+                                 (exp_pc_CO2_CMT_ad + exp_pc_CO2_CMT_ch),
+                                 exp_pc_CO2_CMT_hh),
+      exp_pc_CO2_CMT_ad_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0&hhnocl_ckfuel==0,
+                                    (-(exp_pc_CO2 - (0.6*TST_CO2_pc))),
+                                    -exp_pc_CO2),
+      exp_pc_CO2_CMT_ch_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&children>0&hhnocl_ckfuel==0,
+                                    (-(exp_pc_CO2 - (0.4*TST_CO2_pc))),
+                                    -exp_pc_CO2),
+      exp_pc_CO2_CMT_pc = ifelse(exp_pc_CO2_CMT_pc==0,
+                                 (exp_pc_CO2_CMT_ad_pc + exp_pc_CO2_CMT_ch_pc),
+                                 exp_pc_CO2_CMT_pc),
+      exp_pc_CO2_within_CMT_ad = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0&hhnocl_ckfuel==0,
+                                        (-(exp_pc_CO2_within - (0.6*(TST_CO2_within_per_hh/hh_size)))),
+                                        -exp_pc_CO2_within),
+      exp_pc_CO2_within_CMT_ch= ifelse(incg_5==1|incg_5==2|incg_5==3&children>0&hhnocl_ckfuel==0,
+                                       (-(exp_pc_CO2_within - (0.4*(TST_CO2_within_per_hh/hh_size)))),
+                                       -exp_pc_CO2_within),
+      exp_pc_CO2_within_CMT_hh = ifelse(exp_pc_CO2_within_CMT_hh==0,
+                                        exp_pc_CO2_within_CMT_ad + exp_pc_CO2_within_CMT_ch,
+                                        exp_pc_CO2_within_CMT_hh),
+      exp_pc_CO2_within_CMT_ad_pc = ifelse(incg_5==1|incg_5==2|incg_5==3&adults>0&hhnocl_ckfuel==0,
+                                           (-(exp_pc_CO2_within - (0.6*TST_CO2_within_pc))),
+                                           -exp_pc_CO2_within),
+      exp_pc_CO2_within_CMT_ch_pc= ifelse(incg_5==1|incg_5==2|incg_5==3&children>0&hhnocl_ckfuel==0
+                                          ,(-(exp_pc_CO2_within - (0.4*TST_CO2_within_pc))),
+                                          -exp_pc_CO2_within),
+      exp_pc_CO2_within_CMT_pc = ifelse(exp_pc_CO2_within_CMT_pc==0,
+                                        exp_pc_CO2_within_CMT_ad_pc + exp_pc_CO2_within_CMT_ch_pc,
+                                        exp_pc_CO2_within_CMT_pc)
+    ) %>% 
+    mutate(
+      # Attention: Negative Values indicate positive budget change
+      burden_CO2_pc_CMT_hh=exp_pc_CO2_CMT_hh/hh_exp_USD_pc,
+      burden_CO2_pc_CMT_pc=exp_pc_CO2_CMT_pc/hh_exp_USD_pc,
+      burden_CO2_within_pc_CMT_hh = exp_pc_CO2_within_CMT_hh/hh_exp_USD_pc,
+      burden_CO2_within_pc_CMT_pc =exp_pc_CO2_within_CMT_pc/hh_exp_USD_pc,
+      exp_pc_CO2= -exp_pc_CO2,
+      exp_pc_CO2_within= -exp_pc_CO2_within,
+      burden_CO2_pc= -burden_CO2_pc,
+      burden_CO2_within_pc = -burden_CO2_within_pc
+    ) %>%
+    dplyr::select(hh_id,
+                  hh_weights,
+                  Urban,
+                  incg_5,
+                  hhnocl_ckfuel,
+                  adults,
+                  children,
+                  starts_with("burden_"),
+                  starts_with("exp"))
+  
+  inci_y.2 <- inci_y.1 %>%
+    group_by(incg_5) %>%
+    summarise(
+      exp_pc_CO2= wtd.quantile(
+        exp_pc_CO2,
+        probs = 0.5,
+        weights = hh_weights),
+      exp_pc_CO2_CMT_pc= wtd.quantile(
+        exp_pc_CO2_CMT_pc,
+        probs = 0.5,
+        weights = hh_weights),
+      exp_pc_CO2_CMT_hh= wtd.quantile(
+        exp_pc_CO2_CMT_hh,
+        probs = 0.5,
+        weights = hh_weights),
+      exp_pc_CO2_within= wtd.quantile(
+        exp_pc_CO2_within,
+        probs = 0.5,
+        weights = hh_weights),
+      exp_pc_CO2_within_CMT_pc = wtd.quantile(
+        exp_pc_CO2_within_CMT_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      exp_pc_CO2_within_CMT_hh = wtd.quantile(
+        exp_pc_CO2_within_CMT_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      
+      
+      burden_CO2_pc_no_CMT = wtd.quantile(
+        burden_CO2_pc, probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_CMT_hh = wtd.quantile(
+        burden_CO2_pc_CMT_hh,  probs = 0.5, weights = hh_weights),
+      burden_CO2_pc_CMT_pc = wtd.quantile(
+        burden_CO2_pc_CMT_pc,  probs = 0.5, weights = hh_weights),
+      
+      burden_CO2_within_pc_no_LST = wtd.quantile(
+        burden_CO2_within_pc,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_CMT_hh = wtd.quantile(
+        burden_CO2_within_pc_CMT_hh,
+        probs = 0.5,
+        weights = hh_weights
+      ),
+      burden_CO2_within_pc_CMT_pc = wtd.quantile(
+        burden_CO2_within_pc_CMT_pc,
+        probs = 0.5,
+        weights = hh_weights
+      )
+    ) %>%
+    ungroup() %>%
+    dplyr::select(everything())
+  
+  list_0 <-
+    list("Full_df" = inci_y.1, "Summarised_df" = inci_y.2)
+  
+  return(list_0)
+  
+}
+
+
+tza_221_cmt <- func_0_cmt(tza_final)$Full_df
+tza_222_cmt <-func_0_cmt(tza_final)$Summarised_df
+
+test<-tza_221_cmt %>% 
+  filter(hhnocl_ckfuel==0) %>% 
+  filter(incg_5==1|incg_5==2)
+
+###  CMT Boxplot function --------------------------------------------
+
+CMT_g <- tza_221_cmt  %>%
+  dplyr::select(hh_id, incg_5,Urban,burden_CO2_within_pc_CMT_hh,hh_weights) %>%
+  rename(burden_CO2_pc_CP_hh=burden_CO2_within_pc_CMT_hh
+  ) %>%
+  mutate(comp_type="CMT")
+
+
+# Merge all Compensations for Box plot---------------------------------------
+
+all_com <- NCP_g %>% 
+  rbind(LST_g) %>% 
+  rbind(TST_g) %>%
+  rbind(EST_g) %>% 
+  rbind(SCT_g) %>%
+  rbind(CMT_g) %>% 
+  arrange(hh_id, incg_5)
+
+all_com_1 <- all_com %>%
+  group_by(incg_5, comp_type)%>%
+  summarise(
+    mean = wtd.mean(burden_CO2_pc_CP_hh,
+                    weight = hh_weights,na.rm=T)
+  )%>%
+  ungroup()
+
+# Check how many house holds have more than 50% budget change
+
+test<-all_com %>% 
+  filter(burden_CO2_pc_CP_hh>0.5)
+unique(test$hh_id)
+
+length(unique(test$hh_id))
+
+test_1<-all_com %>% 
+  filter(burden_CO2_pc_CP_hh>5)
+unique(test_1$hh_id)
+
+length(unique(test_1$hh_id))
+
+
+all_com_2 <- all_com %>%
+  left_join(all_com_1, by = c("incg_5", "comp_type")) %>% 
+  mutate(Label=ifelse(comp_type=="NCP","Without Compensation",NA),
+         Label=ifelse(comp_type=="LST","Lump sum Transfer",Label),
+         Label=ifelse(comp_type=="TST","Targeted Transfer",Label),
+         Label=ifelse(comp_type=="EST","Solar Light Provision",Label),
+         Label=ifelse(comp_type=="SCT","Solar Cooker Provision",Label),
+         Label=ifelse(comp_type=="CMT","Solar Cooker & Targeted Transfer",Label)
+  )
+
+all_com_2$Label <- factor(
+  all_com_2$Label,
+  levels = c(
+    "Without Compensation",
+    "Lump sum Transfer",
+    "Targeted Transfer",
+    "Solar Light Provision",
+    "Solar Cooker Provision",
+    "Solar Cooker & Targeted Transfer"
+  )
+)
+
+# save data
+
+all_com_test <- all_com_2 %>% 
+  dplyr::group_by(incg_5,Label) %>% 
+  dplyr::summarize(average_hh_budget=wtd.mean(burden_CO2_pc_CP_hh,
+                                       weights=hh_weights,
+                                       na.rm = T)
+  ) %>% 
+  ungroup()
+
+write.xlsx(all_com_test, 
+           file.path(dir[["analysis"]], "hh_budget_change_nl_IG_q123.xlsx")
+)
+
+
+
+
+# Plot  ------------------------------------------------------
+all_com_2_3 <- all_com_2 %>%
+  dplyr::group_by(incg_5, Label)%>%
+  dplyr::summarise(y5 = wtd.quantile(burden_CO2_pc_CP_hh, probs = 0.05, weights = hh_weights),
+            y25 = wtd.quantile(burden_CO2_pc_CP_hh, probs = 0.25, weights = hh_weights),
+            y50 = wtd.quantile(burden_CO2_pc_CP_hh, probs = 0.5, weights = hh_weights),
+            y75 = wtd.quantile(burden_CO2_pc_CP_hh, probs = 0.75, weights = hh_weights),
+            y95 = wtd.quantile(burden_CO2_pc_CP_hh, probs = 0.95, weights = hh_weights),
+            mean = wtd.mean(burden_CO2_pc_CP_hh, weights = hh_weights, na.rm = T))%>%
+  ungroup()
+
+
+
+## Box plot 2 ---------------------------------------
+
+# plot a
+plot_a <- ggplot(all_com_2_3 ) +
+  theme_bw() +
+  geom_boxplot(
+    aes(
+      ymin = y5,
+      lower = y25,
+      middle = y50,
+      upper = y75,
+      ymax = y95,
+      x = factor(incg_5),
+      fill = factor(Label)
+    ),
+    stat = "identity",
+    position = position_dodge(0.7),
+    outlier.shape = NA,
+    width = 0.5,
+    size = 0.2
+  ) +
+  stat_summary(
+    aes(
+      y = mean,
+      group = interaction(incg_5,Label),
+      x = factor(incg_5)
+    ),
+    fun = "mean",
+    geom = "point",
+    na.rm = T,
+    position =  position_dodge(0.7),
+    shape = 23,
+    size = 0.8,
+    fill = "white",
+    stroke = 0.2
+  ) +
+  xlab("Expenditure quintiles") + 
+  ylab("Household Budget Change") +
+  #coord_cartesian(ylim = c(-0.05, 0.1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     expand = c(-0.05, 0.1)#,
+                     #limits = c(-0.05, 0.6)
+  ) +
+  scale_x_discrete(labels = c("1", "2", "3", "4", "5")) +
+  scale_fill_manual(
+    values = c(
+      "Without Compensation" =  "red",
+      "Lump sum Transfer" =  "#882255",
+      "Targeted Transfer" = "#D55E00",
+      "Solar Light Provision" = "#F0E442",
+      "Solar Cooker Provision" = "#0072B2",
+      "Solar Cooker & Targeted Transfer" = "#009E73"
+    ),
+    labels = c(
+      "red"="Without Compensation",
+      "#882255" = "Lump sum Transfer",
+      "#D55E00" = "Targeted Transfer",
+      "#F0E442" = "Solar Light Provision",
+      "#0072B2" = "Solar Cooker Provision",
+      "#009E73" = "Solar Cooker & Targeted Transfer"
+    )
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  #ggtitle("Different Compensation schemes") +
+  theme(
+    axis.text.y = element_text(size = 12),
+    axis.text.x = element_text(size = 12),
+    axis.title  = element_text(size = 12),
+    plot.title = element_text(size = 7, hjust=0.5,face = "bold"),
+    legend.position = "bottom",
+    strip.text = element_text(size = 12),
+    strip.text.y = element_text(angle = 180),
+    panel.grid.major = element_line(linewidth = 0.3),
+    panel.grid.minor = element_blank(),
+    axis.ticks = element_line(linewidth = 0.2),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    plot.margin = unit(c(0.1, 0.1, 0, 0), "cm"),
+    panel.border = element_rect(linewidth = 0.3)
+  )+
+  labs(colour = "",linetype = "", fill = "") +
+  guides(fill = guide_legend(nrow = 2, order = 2)
+  )+
+  geom_magnify(from = c(0.8, 5.5, -0.05, 0.20), 
+               to = c(2, 5.5, 0.80, 1.8), 
+               shadow = TRUE,
+               linetype='dashed',
+               colour = "darkblue",
+               linewidth=0.8,
+               axes="xy",
+               proj="single",
+               inset.linetype=0
+  )
+
+plot_a
+
+
+# save plot
+png(filename= file.path(dir[["figures"]], 
+                        "Figure_6.png"),
+    width = 15.5, height = 15, unit = "cm", res = 400)
+print(plot_a)
+dev.off()
+
+# Just for statistics Fuel/Electricity Revenue ---------------------------------------------------
+
+
+inci_y <- tza_final %>%
+  dplyr::select(
+    hh_id,
+    hh_size,
+    hh_weights,
+    Urban,
+    incg_5,
+    hh_exp_USD_pc,
+    starts_with("burden"),
+    starts_with("exp_")
+  ) %>%
+  mutate(
+    tt_exp_CO2_ely = exp_pc_CO2_ely * hh_size * hh_weights,
+    tt_exp_CO2_trs = exp_pc_CO2_trs*hh_size*hh_weights,
+    population = hh_size * hh_weights
+  )
+
+tt_exp_CO2_ely<-sum(inci_y$tt_exp_CO2_ely)
+tt_exp_CO2_trs <- sum(inci_y$tt_exp_CO2_trs)
+
+
+
+
+
+
+rm(list = ls())
+
+
+
+
+
+
+
+
+
+
