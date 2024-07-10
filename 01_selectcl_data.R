@@ -1,35 +1,39 @@
-# Authors: Laura Sch?rer and Abigail O. Asare
+# Authors: Laura Schürer and Abigail O. Asare
 
 # Email: laura.schuerer@uol.de and abigail.asare@uol.de
 
 # Date: 04/01/2024
 
 # Sys.getlocale()
+# Authors: Laura Schürer and Abigail O. Asare
+
+# Email: laura.schuerer@uol.de and abigail.asare@uol.de
+
+# Date: # Date: 09/07/2024
+
+# Sys.getlocale()
 
 # Load relevant Packages------------------------------------------
-library("cowplot")
+# library("cowplot")
+library("dplyr")
 library("data.table")
 library("foreign")
-library("ggthemes")
 library("ggsci")
-library("haven")
-library("dplyr")
 library("Hmisc")
 library("expss")
-library("ggplot2")
-library("janitor")
-library("officer")
 library("openxlsx")
-library("quantreg")
 library("rattle")
-library("reshape2")
 library("scales")
 library("tidyverse")
-library("utils")
-library("wesanderson")
 library("weights")
-library("tidyr")
 library("readr")
+library("readxl")
+library("ggrepel")
+library("colorspace")
+library(survey)
+library(ggforce)
+library(ggmagnify)
+library(ggfx)
 
 # Currency is in TSH
 # Year = 2020 
