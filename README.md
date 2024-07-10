@@ -3,7 +3,7 @@
   - This repository contains codes and supplementary data on "Incidence of Carbon Pricing in Tanzania:
     Using Revenues to Empower Low-Income Households with Renewable Energy" by Asare and Schüer
 
-## other_data_files folder:
+## Data_files folder:
   - GTAP_matching_categories.xlsx contains matching of item codes to the consumption categories (food, goods, energy, services).
   - GTAP_matching_sectors.xlsx contains matching each item code to GTAP sectors.
   - hh-CO2-emmisions*.xlsx and hh-CO2-intensities*.xlsx contains carbon intensities and emissions outputs from GAMS.
