@@ -1,39 +1,27 @@
-# Authors: Laura Schürer and Abigail O. Asare
+# Authors: Laura Sch?rer and Abigail O. Asare
 
 # Email: laura.schuerer@uol.de and abigail.asare@uol.de
 
 # Date: 04/01/2024
 
 # Sys.getlocale()
-# Authors: Laura Schürer and Abigail O. Asare
-
-# Email: laura.schuerer@uol.de and abigail.asare@uol.de
-
-# Date: # Date: 09/07/2024
-
-# Sys.getlocale()
 
 # Load relevant Packages------------------------------------------
-# library("cowplot")
-library("dplyr")
 library("data.table")
 library("foreign")
-library("ggsci")
+library("haven")
+library("tidyverse")
+library("tidyr")
+library("dplyr")
 library("Hmisc")
 library("expss")
+library("ggplot2")
+library("officer")
 library("openxlsx")
 library("rattle")
+library("reshape2")
 library("scales")
-library("tidyverse")
-library("weights")
 library("readr")
-library("readxl")
-library("ggrepel")
-library("colorspace")
-library(survey)
-library(ggforce)
-library(ggmagnify)
-library(ggfx)
 
 # Currency is in TSH
 # Year = 2020 
@@ -708,7 +696,7 @@ tza_clean <-tza_clean %>%
 
 
 
-# Clean Merge data --------------------- ---------------------------------------
+# Clean Merge data -------------------------------------------------------------
 
 # keep only non-zero or non missing expenditures
 

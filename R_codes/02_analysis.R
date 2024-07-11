@@ -2,33 +2,32 @@
 
 # Email: laura.schuerer@uol.de and abigail.asare@uol.de
 
-# Date: # Date: 09/07/2024
+# Date:
 
 # Sys.getlocale()
 
 # Load relevant Packages------------------------------------------
-# library("cowplot")
-library("dplyr")
 library("data.table")
 library("foreign")
 library("ggsci")
+library("haven")
+library("dplyr")
 library("Hmisc")
 library("expss")
+library("ggplot2")
+library("officer")
 library("openxlsx")
 library("rattle")
+library("reshape2")
 library("scales")
 library("tidyverse")
-library("weights")
+library("tidyr")
 library("readr")
 library("readxl")
-library("ggrepel")
-library("colorspace")
-library(survey)
-library(ggforce)
-library(ggmagnify)
-library(ggfx)
+
 # Currency is in TSH
 # Year = 2020
+
 
 # Setup -------------------------------------------------------------------
 source("./00_setup.R")
@@ -1993,7 +1992,7 @@ inci_analy <- inci_analy %>%
          exp_pc_CO2_ely= tCO2_ely_pc*carbp,
          exp_pc_CO2_trs= tCO2_trs_pc*carbp) %>%
   # Burden: additional expenditures over expenditures (per capita)
-  # "Relative Belastung" / "relative burden"
+  # "relative burden"
   mutate(burden_CO2_pc= exp_pc_CO2/hh_exp_USD_pc,
          burden_CO2_within_pc=exp_pc_CO2_within/hh_exp_USD_pc,
          burden_CO2_ely_pc= exp_pc_CO2_ely/hh_exp_USD_pc,
