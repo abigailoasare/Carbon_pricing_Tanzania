@@ -9,8 +9,8 @@
   - hh-CO2-emmisions*.xlsx and hh-CO2-intensities*.xlsx contains carbon intensities and CO_2 emissions.
   - Where int corresponds to the international; TZA to the national; ELY to the electricity and fuel to the fuel carbon price.
 
- **Note:** _Due to confidentiality, we can not make available the micro and GTAP raw data_.
-          _However the datasets can be download from respective data websites (see paper for links and further information)_.
+ **Note:** _Due to confidentiality, we can not make the micro and GTAP raw data available_.
+          _However, the datasets can be download from respective data websites (see paper for links and further information)_.
 
 ## R_Codes folder:
   - 01_selectcl_data.R is scripts for selecting relevant micro data and data cleaning.
