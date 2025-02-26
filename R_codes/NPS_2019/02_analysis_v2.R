@@ -1,4 +1,4 @@
-# Authors: Laura Schürer and Abigail O. Asare
+Authors: Abigail O. Asare and Laura Schürer
 
 # Date:26/02/2025
 
