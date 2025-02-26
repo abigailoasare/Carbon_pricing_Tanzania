@@ -37,7 +37,7 @@ Urban_New <- data.frame("urban" = c(1,2), "Urban" = c("Rural", "Urban"))
 # HH data ----------------------------------------------------------------
 
 tza_info <-
-  read_csv(file.path(dir[["tza_processed"]], "clean_tanzania_2020.csv"))|> 
+  read_csv(file.path(dir[["tza_processed"]], "clean_tanzania_2019.csv"))|> 
   mutate(Urban=ifelse(urban==1,"Rural","Urban"))|> 
   filter(!is.na(hh_id))|> 
   filter(!is.na(hh_weights))|>
@@ -974,7 +974,7 @@ write_csv(carbon_intensities,
 
 ## We load TZA raw data -------------------------------------------------------
 
-tza_raw <- read_csv(file.path(dir[["tza_processed"]], "clean_tanzania_2020.csv"))
+tza_raw <- read_csv(file.path(dir[["tza_processed"]], "clean_tanzania_2019.csv"))
 
 tza_info <- tza_raw|> 
   select(hh_id,hh_size,hh_weights, urban,adults)|> 
