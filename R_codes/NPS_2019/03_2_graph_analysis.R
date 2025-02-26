@@ -386,7 +386,7 @@ tza_2_box_tsp <- tza_2 |>
   )
 
 
-## Figure 3a in paper -----------------------------------------
+## Figure 3a (International) in paper -----------------------------------------
 
 # Create boxplot1
 plot_3a1 <- ggplot(tza_2_box_int) +
@@ -444,7 +444,7 @@ print(plot_3a1)
 
 
 
-## Figure 3b in paper -----------------------------------------
+## Figure 3b (National) in paper  -----------------------------------------
 plot_3a2 <- ggplot(tza_2_box_nat) +
   
   geom_boxplot(
@@ -500,7 +500,7 @@ plot_3a2 <- ggplot(tza_2_box_nat) +
 print(plot_3a2)
 
 
-## Figure 3c in paper -----------------------------------------
+## Figure 3c (Electricity) in paper -----------------------------------------
 plot_3a3 <- ggplot(tza_2_box_ely) +
   geom_boxplot(
     aes(
@@ -556,7 +556,7 @@ print(plot_3a3)
 
 
 
-## Figure 3d in paper -----------------------------------------
+## Figure 3d (Fuel) in paper -----------------------------------------
 plot_3a4 <- ggplot(tza_2_box_tsp) +
   
   geom_boxplot(
@@ -610,9 +610,6 @@ plot_3a4 <- ggplot(tza_2_box_tsp) +
   ) 
 
 print(plot_3a4)
-
-
-
 
 # save plot
 png(filename= file.path(dir[["figures"]], "Figure_3a.png"), 
@@ -887,7 +884,7 @@ tza_13.1 <- tza_13 %>%
 max_median <- max(tza_13.1$md_x)
 min_median <- min(tza_13.1$md_x)
 
-## plot ------------------------------------------------------
+## plot Figure 5 ------------------------------------------------------
 
 plot_4 <- ggplot(tza_13.1,
                  aes(
