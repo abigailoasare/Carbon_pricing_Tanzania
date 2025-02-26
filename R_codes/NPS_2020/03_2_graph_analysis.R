@@ -1,13 +1,6 @@
 # Authors: Abigail O. Asare and Laura Schürer 
 
 # Date: 26/02/2025
-# Authors: Laura Schürer and Abigail O. Asare
-
-# Email: laura.schuerer@uol.de and abigail.asare@uol.de
-
-# Date:07/02/2025
-
-# Sys.getlocale()
 
 # Load relevant Packages------------------------------------------
 # library("cowplot")
