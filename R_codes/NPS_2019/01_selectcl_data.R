@@ -658,7 +658,7 @@ tza_clean <-tza_clean |>
 
 # Save final Clean data as csv -------------------------------------------------
 
-write_csv(tza_clean,file.path(dir[["tza_processed"]],"clean_tanzania_2020.csv"))
+write_csv(tza_clean,file.path(dir[["tza_processed"]],"clean_tanzania_2019.csv"))
 
 
 rm(list = ls())
