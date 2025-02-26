@@ -1090,7 +1090,7 @@ print(plot_5a)
 dev.off()
 
 
-# Figure 2b in paper  -----------------------------------------------------
+# Figure 2b (Energy Types) in paper  -----------------------------------------------------
 # Engel-Curves of Energy Expenditures--- Energy types
 
 tza_sub_f <- tza_final %>% 
