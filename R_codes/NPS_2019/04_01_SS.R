@@ -1,9 +1,6 @@
 # Authors: Abigail O. Asare and  Laura Schürer
 
 # Date: 26/02/2025
-
-# Sys.getlocale()
-
 # Load relevant Packages------------------------------------------
 library("cowplot")
 library("dplyr")
