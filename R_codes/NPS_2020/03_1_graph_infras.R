@@ -55,7 +55,7 @@ tza_infras_u <-tza_infras %>%
 
 
 
-## Figure 1 in Paper -----------------------------------------
+## Appendix Figure A.5 -----------------------------------------
 
 ### Rural ------------------------------------
 #aes(x = reorder(Type, -share)
