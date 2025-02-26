@@ -46,14 +46,6 @@ tza_info <-
   filter(!is.na(hh_size)) 
 
 
-urban_1 <-
-  data.frame(
-    "urban" = c(1, 2),
-    "Urban" = c("Rural", "Urban"),
-    urban_01 = c(0, 1)
-  )
-
-
 ## Generate functions -----------------------------------------------------------------
 
 
