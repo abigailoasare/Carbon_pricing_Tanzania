@@ -56,9 +56,9 @@ tza_info <-
 
 
 
-# Summary Statistics Table Appendix ------------------------------
+# Summary Statistics (SS) Appendix Tables ------------------------------
 
-## Appendix Table A2 -------------------------------------------
+## Appendix Table A.2 -------------------------------------------
 #  SS Urban/Rural and IG 
 
 Sum_tza_ur_IG <- tza_final |>
@@ -97,7 +97,7 @@ print(table_latex_1, file =file.path(dir[["tables"]],"Appendix_Table_A2.tex")
 )
 
 
-## Appendix Table A3 -------------------------------------------
+## Appendix Table A.3 -------------------------------------------
 ## SS Carbon Foot print by UR and IG
 
 Sum_tza_UR_IG <- tza_final |>
@@ -126,7 +126,7 @@ print(table_latex_1, file =file.path(dir[["tables"]],"Appendix_Table_A3.tex")
 )
 
 
-## Appendix Table A4 -------------------------------------------
+## Appendix Table A.4 -------------------------------------------
 ## SS Statistics Incidence (burden) by UR and IG
 
 Sum_tza_IC_UR_IG <- tza_final |>
@@ -156,7 +156,7 @@ table_latex_1<-xtable(Sum_tza_IC_UR_IG , label="SS_HHs_incidences_UR_IG",
 print(table_latex_1, file =file.path(dir[["tables"]],"Appendix_Table_A4.tex")
 )
 
-# Appendix Table A9 -------------------------------------------
+# Appendix Table A.9 -------------------------------------------
 gtap_hh<-read_excel("./data-raw/GTAP_matching_sectors.xlsx", 
                     sheet = "matching_edited", skip=1) 
 
@@ -178,7 +178,7 @@ print(table_latex_1, file =file.path(dir[["tables"]],"match_itemcodes.tex")
 )
 
 
-# Appendix Table A8 -------------------------------------------
+# Appendix Table A.8 -------------------------------------------
 
 ## Gtap Sectors------------------------------------
 
