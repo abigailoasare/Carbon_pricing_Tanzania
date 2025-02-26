@@ -1321,7 +1321,7 @@ NLT_2_3 <- NLT_2 |>
   ungroup()
 
 
-### Appendix Figure A4a (Monetary) -------------------------------------------
+### Appendix Figure A.4a (Monetary) -------------------------------------------
 plot_a <- ggplot(NLT_2_3 ) +
   theme_bw() +
   geom_boxplot(
@@ -1418,7 +1418,7 @@ ESST_2_3 <- ESST_2 |>
   ungroup()
 
 
-### Appendix Figure A4b (Non-monetary) -------------------------------------------
+### Appendix Figure A.4b (Non-monetary) -------------------------------------------
 plot_a <- ggplot(ESST_2_3 ) +
   theme_bw() +
   geom_boxplot(
