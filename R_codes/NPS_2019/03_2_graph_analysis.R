@@ -1618,7 +1618,7 @@ dev.off()
 # Other Graphs -----------------------------------------------------
 
 
-tza_info <- read_csv(file.path(dir[["tza_processed"]], "clean_tanzania_2020.csv")) %>% 
+tza_info <- read_csv(file.path(dir[["tza_processed"]], "clean_tanzania_2019.csv")) %>% 
   filter(!is.na(hh_id)) %>% 
   filter(!is.na(hh_weights)) %>%
   filter(!is.na(hh_size)) %>% 
