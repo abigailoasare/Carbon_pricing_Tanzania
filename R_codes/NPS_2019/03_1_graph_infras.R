@@ -25,9 +25,8 @@ library(ggfx)
 source("./00_setup.R")
 
 
-# Infrastructures --------------------------------------------------
+# Infrastructures Figures --------------------------------------------------
 
-# Plots for Appendix 9
 tza_infras <-
   read_csv(file.path(dir[["analysis"]], "hh_infrastructure_IG5UR_tza.csv")) %>% 
   pivot_longer(cols = c(access_sanit_st,access_ely_grid, access_water_st,access_ely_solar),
@@ -56,7 +55,7 @@ tza_infras_u <-tza_infras %>%
   na.omit()
 
 
-## All Infrastructure -----------------------------------------
+## Figure 1 in Paper -----------------------------------------
 
 ### Rural ------------------------------------
 #aes(x = reorder(Type, -share)
@@ -157,144 +156,13 @@ combine <- ggarrange(plot_b,plot_a, legend="bottom",common.legend=T)
 combine
 
 # save plot
-png(filename= file.path(dir[["figures"]], "Figure_1_2019.png"), 
+png(filename= file.path(dir[["figures"]], "Figure_1.png"), 
     width = 15.5, height = 15, unit = "cm", res = 400)
 print(combine)
 dev.off()
 
 
-# Cooking types  --------------------------------------------------
-
-tza_cook <-
-  read_csv(file.path(dir[["analysis"]], "hh_cooking_IG5UR_tza.csv")) 
-
-unique(tza_cook$cooking_Label)
-
-tza_cook_r <-tza_cook %>% 
-  select(Urban,incg_5,cooking_Label,share) %>% 
-  filter(Urban=="Rural") %>% 
-  na.omit()
-
-tza_cook_u <-tza_cook %>% 
-  select(Urban,incg_5,cooking_Label,share) %>% 
-  filter(Urban=="Urban")%>% 
-  na.omit()
-
-
-
-### Rural ---------------------------------------------------
-
-plot_ck_a <- ggplot(tza_cook_r, aes(x = incg_5, 
-                                    y = share, 
-                                    fill = cooking_Label)) +
-  geom_bar(stat = "identity",
-           position = position_dodge(width = 0.5),
-           width = 0.4,
-           colour="black") + 
-  theme_minimal()+
-  scale_fill_manual(values = c("charcoal" = "#E69F00", 
-                               "firewood" = "#56B4E9",
-                               "gas" = "#009E73",
-                               "electricity"="#882255",
-                               "others"="#F0E442")
-  ) +
-  scale_y_continuous(
-    expand = c(0, 0),
-    breaks = seq(0.0, 1, 0.25),
-    labels = scales::percent_format(accuracy = 1),
-    limits = c(0, 1)
-  ) +
-  theme(
-    axis.text.y =  element_blank(),
-    axis.text.x = element_text(size = 12),
-    axis.title = element_text(size = 12),
-    plot.title = element_text(size = 12, hjust=0.5,face = "bold"),
-    legend.position = "bottom",
-    strip.text = element_text(size = 12),
-    strip.text.y = element_text(angle = 180),
-    panel.grid.major = element_line(linewidth = 0.3),
-    panel.grid.minor = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.ticks.x = element_line(linewidth = 0.2),
-    legend.text = element_text(size = 12),
-    legend.title = element_blank(),
-    plot.margin = unit(c(0.1, 0.1, 0, 0), "cm")
-  )+
-  guides(fill = guide_legend(nrow = 1, order = 3)
-  )+
-  xlab("") +
-  ylab("") +
-  ggtitle("Rural")
-
-
-plot_ck_a
-
-
-
-### Urban ----------------------------------------------
-
-plot_ck_b <- ggplot(tza_cook_u, aes(x = incg_5, 
-                                    y = share, 
-                                    fill = cooking_Label)) +
-  geom_bar(stat = "identity",
-           position = position_dodge(width = 0.5),
-           width = 0.4,
-           colour="black") +
-  scale_fill_manual(values = c("charcoal" = "#E69F00", 
-                               "firewood" = "#56B4E9",
-                               "gas" = "#009E73",
-                               "electricity"="#882255",
-                               "others"="#F0E442")
-  ) +
-  theme_minimal()+
-  scale_y_continuous(
-    expand = c(0, 0),
-    breaks = seq(0.0,1.0, 0.25),
-    labels = scales::percent_format(accuracy = 1),
-    limits = c(0, 1)
-  ) +
-  theme(
-    axis.text.y =  element_text(size = 12),
-    axis.text.x = element_text(size = 12),
-    axis.title = element_text(size = 12),
-    plot.title = element_text(size = 12, hjust=0.5,face = "bold"),
-    legend.position = "bottom",
-    strip.text = element_text(size = 12),
-    strip.text.y = element_text(angle = 180),
-    panel.grid.major = element_line(linewidth = 0.3),
-    panel.grid.minor = element_blank(),
-    axis.ticks.y = element_line(linewidth = 0.2),
-    axis.ticks.x = element_line(linewidth = 0.2),
-    legend.text = element_text(size = 12),
-    legend.title = element_blank(),
-    plot.margin = unit(c(0.1, 0.1, 0, 0), "cm")
-  )+
-  guides(fill = guide_legend(nrow = 1, order = 3)
-  )+
-  xlab("") +
-  ylab("Cooking Fuel Type (% of household)") +
-  ggtitle("Urban")
-
-plot_ck_b
-
-
-
-# Combine plots
-
-# Combine plots
-legend_a <- get_legend(plot_ck_b)
-
-combine <- ggarrange(plot_ck_b,plot_ck_a, legend="bottom",legend.grob=legend_a)
-
-combine
-
-# save plot
-png(filename= file.path(dir[["figures"]], "Figure_B1c_2019.png"), 
-    width = 15.5, height = 15, unit = "cm", res = 400)
-print(combine)
-dev.off()
-
-# Lighting types --------------------------------------------------
+# Appendix Figure A.1 (a) Lighting types --------------------------------------------------
 
 tza_lighting <-
   read_csv(file.path(dir[["analysis"]], "hh_lighting_IG5UR_tza.csv")) %>% 
@@ -432,14 +300,14 @@ combine <- ggarrange(plot_lg_b,plot_lg_a,
 combine
 
 # save plot
-png(filename= file.path(dir[["figures"]], "Figure_B1a_2019.png"), 
+png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1a.png"), 
     width = 15.5, height = 15, unit = "cm", res = 400)
 print(combine)
 dev.off()
 
 
 
-## Other Water usage type--------------------------------------------------
+## Appendix Figure A.1 (b) Other Water usage type--------------------------------------------------
 
 tza_owater <-
   read_csv(file.path(dir[["analysis"]], "hh_owater_IG5UR_tza.csv"))
@@ -564,13 +432,147 @@ combine <- ggarrange(plot_ow_b,plot_ow_a, legend="bottom", common.legend=T)
 combine
 
 # save plot
-png(filename= file.path(dir[["figures"]], "Figure_B1b_2019.png"), 
+png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1b.png"), 
     width = 15.5, height = 15, unit = "cm", res = 400)
 print(combine)
 dev.off()
 
 
-# Toilet type --------------------------------------------------
+
+# Appendix Figure A.1 (c) Cooking types  --------------------------------------------------
+
+tza_cook <-
+  read_csv(file.path(dir[["analysis"]], "hh_cooking_IG5UR_tza.csv")) 
+
+unique(tza_cook$cooking_Label)
+
+tza_cook_r <-tza_cook %>% 
+  select(Urban,incg_5,cooking_Label,share) %>% 
+  filter(Urban=="Rural") %>% 
+  na.omit()
+
+tza_cook_u <-tza_cook %>% 
+  select(Urban,incg_5,cooking_Label,share) %>% 
+  filter(Urban=="Urban")%>% 
+  na.omit()
+
+
+
+### Rural ---------------------------------------------------
+
+plot_ck_a <- ggplot(tza_cook_r, aes(x = incg_5, 
+                                    y = share, 
+                                    fill = cooking_Label)) +
+  geom_bar(stat = "identity",
+           position = position_dodge(width = 0.5),
+           width = 0.4,
+           colour="black") + 
+  theme_minimal()+
+  scale_fill_manual(values = c("charcoal" = "#E69F00", 
+                               "firewood" = "#56B4E9",
+                               "gas" = "#009E73",
+                               "electricity"="#882255",
+                               "others"="#F0E442")
+  ) +
+  scale_y_continuous(
+    expand = c(0, 0),
+    breaks = seq(0.0, 1, 0.25),
+    labels = scales::percent_format(accuracy = 1),
+    limits = c(0, 1)
+  ) +
+  theme(
+    axis.text.y =  element_blank(),
+    axis.text.x = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    plot.title = element_text(size = 12, hjust=0.5,face = "bold"),
+    legend.position = "bottom",
+    strip.text = element_text(size = 12),
+    strip.text.y = element_text(angle = 180),
+    panel.grid.major = element_line(linewidth = 0.3),
+    panel.grid.minor = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_line(linewidth = 0.2),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    plot.margin = unit(c(0.1, 0.1, 0, 0), "cm")
+  )+
+  guides(fill = guide_legend(nrow = 1, order = 3)
+  )+
+  xlab("") +
+  ylab("") +
+  ggtitle("Rural")
+
+
+plot_ck_a
+
+
+
+### Urban ----------------------------------------------
+
+plot_ck_b <- ggplot(tza_cook_u, aes(x = incg_5, 
+                                    y = share, 
+                                    fill = cooking_Label)) +
+  geom_bar(stat = "identity",
+           position = position_dodge(width = 0.5),
+           width = 0.4,
+           colour="black") +
+  scale_fill_manual(values = c("charcoal" = "#E69F00", 
+                               "firewood" = "#56B4E9",
+                               "gas" = "#009E73",
+                               "electricity"="#882255",
+                               "others"="#F0E442")
+  ) +
+  theme_minimal()+
+  scale_y_continuous(
+    expand = c(0, 0),
+    breaks = seq(0.0,1.0, 0.25),
+    labels = scales::percent_format(accuracy = 1),
+    limits = c(0, 1)
+  ) +
+  theme(
+    axis.text.y =  element_text(size = 12),
+    axis.text.x = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    plot.title = element_text(size = 12, hjust=0.5,face = "bold"),
+    legend.position = "bottom",
+    strip.text = element_text(size = 12),
+    strip.text.y = element_text(angle = 180),
+    panel.grid.major = element_line(linewidth = 0.3),
+    panel.grid.minor = element_blank(),
+    axis.ticks.y = element_line(linewidth = 0.2),
+    axis.ticks.x = element_line(linewidth = 0.2),
+    legend.text = element_text(size = 12),
+    legend.title = element_blank(),
+    plot.margin = unit(c(0.1, 0.1, 0, 0), "cm")
+  )+
+  guides(fill = guide_legend(nrow = 1, order = 3)
+  )+
+  xlab("") +
+  ylab("Cooking Fuel Type (% of household)") +
+  ggtitle("Urban")
+
+plot_ck_b
+
+
+
+# Combine plots
+
+# Combine plots
+legend_a <- get_legend(plot_ck_b)
+
+combine <- ggarrange(plot_ck_b,plot_ck_a, legend="bottom",legend.grob=legend_a)
+
+combine
+
+# save plot
+png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1c.png"), 
+    width = 15.5, height = 15, unit = "cm", res = 400)
+print(combine)
+dev.off()
+
+
+
+# Appendix Figure A.1 (d) Toilet type --------------------------------------------------
 
 tza_toilet <-
   read_csv(file.path(dir[["analysis"]], "hh_toilet_IG5UR_tza.csv"))%>% 
@@ -709,7 +711,7 @@ combine <- ggarrange(plot_tt_b,plot_tt_a, legend="bottom", common.legend = T)
 combine
 
 # save plot
-png(filename= file.path(dir[["figures"]], "Figure_B1d_2019.png"), 
+png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1d.png"), 
     width = 15.5, height = 15, unit = "cm", res = 400)
 print(combine)
 dev.off()
