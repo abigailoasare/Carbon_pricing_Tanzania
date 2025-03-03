@@ -1176,20 +1176,20 @@ length(unique(test$hh_id))
 all_com_2 <- all_com |>
   left_join(all_com_1, by = c("incg_5", "comp_type")) |> 
   mutate(Label=ifelse(comp_type=="NCP","Without Compensation",NA),
-         Label=ifelse(comp_type=="LST","Lump sum Transfer",Label),
-         Label=ifelse(comp_type=="TST","Targeted Transfer",Label),
-         Label=ifelse(comp_type=="EST","Solar Light Provision",Label),
-         Label=ifelse(comp_type=="SCT","Solar Cooker Provision",Label)
+         Label=ifelse(comp_type=="LST","Lump-sum",Label),
+         Label=ifelse(comp_type=="TST","Targeted",Label),
+         Label=ifelse(comp_type=="EST","Solar Light",Label),
+         Label=ifelse(comp_type=="SCT","Solar Cooker",Label)
   )
 
 all_com_2$Label <- factor(
   all_com_2$Label,
   levels = c(
     "Without Compensation",
-    "Lump sum Transfer",
-    "Targeted Transfer",
-    "Solar Light Provision",
-    "Solar Cooker Provision"
+    "Lump-sum",
+    "Targeted",
+    "Solar Light",
+    "Solar Cooker"
   )
 )
 
@@ -1301,16 +1301,16 @@ NLT_1 <- NLT |>
 NLT_2 <- NLT |>
   left_join(NLT_1, by = c("incg_5", "comp_type")) |> 
   mutate(Label=ifelse(comp_type=="NCP","Without Compensation",NA),
-         Label=ifelse(comp_type=="LST","Lump sum Transfer",Label),
-         Label=ifelse(comp_type=="TST","Targeted Transfer",Label)
+         Label=ifelse(comp_type=="LST","Lump-sum",Label),
+         Label=ifelse(comp_type=="TST","Targeted",Label)
   )
 
 NLT_2$Label <- factor(
   NLT_2$Label,
   levels = c(
     "Without Compensation",
-    "Lump sum Transfer",
-    "Targeted Transfer"
+    "Lump-sum",
+    "Targeted"
   )
 )
 
@@ -1348,16 +1348,16 @@ ESST_2 <- ESST |>
   left_join(ESST_1, by = c("incg_5", "comp_type")) |> 
   mutate(
     Label=ifelse(comp_type=="NCP","Without Compensation",NA),
-    Label=ifelse(comp_type=="EST","Solar Light Provision",Label),
-    Label=ifelse(comp_type=="SCT","Solar Cooker Provision",Label)
+    Label=ifelse(comp_type=="EST","Solar Light",Label),
+    Label=ifelse(comp_type=="SCT","Solar Cooker",Label)
   )
 
 ESST_2$Label <- factor(
   ESST_2$Label,
   levels = c(
     "Without Compensation",
-    "Solar Light Provision",
-    "Solar Cooker Provision"
+    "Solar Light",
+    "Solar Cooker"
   )
 )
 
@@ -1434,13 +1434,13 @@ plot_a <- ggplot(NLT_2_3 ) +
   scale_fill_manual(
     values = c(
       "Without Compensation" =  "red",
-      "Lump sum Transfer" =  "#882255",
-      "Targeted Transfer" = "#D55E00"
+      "Lump-sum" =  "#882255",
+      "Targeted" = "#D55E00"
     ),
     labels = c(
       "red"="Without Compensation",
-      "#882255" = "Lump sum Transfer",
-      "#D55E00" = "Targeted Transfer"
+      "#882255" = "Lump-sum",
+      "#D55E00" = "Targeted"
     )
   ) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
@@ -1532,13 +1532,13 @@ plot_a <- ggplot(ESST_2_3) +
   scale_fill_manual(
     values = c(
       "Without Compensation" =  "red",
-      "Solar Light Provision" = "#F0E442",
-      "Solar Cooker Provision" = "#0072B2"
+      "Solar Light" = "#F0E442",
+      "Solar Cooker" = "#0072B2"
     ),
     labels = c(
       "red"="Without Compensation",
-      "#F0E442" = "Solar Light Provision",
-      "#0072B2" = "Solar Cooker Provision"
+      "#F0E442" = "Solar Light",
+      "#0072B2" = "Solar Cooker"
     )
   ) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
