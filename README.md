@@ -14,7 +14,7 @@
           _However, the datasets can be accessed from the following sources_:
 - 2019 NPS Data: Available at [World Bank Microdata Library](https://microdata.worldbank.org/index.php/catalog/3885).
 - 2020 NPS Data: Accessible at [World Bank Microdata Library](https://microdata.worldbank.org/index.php/catalog/3885/get-microdata)
-  aupon registration and submission of the required documentation.
+  upon registration and submission of the required documentation.
 
 ## R_Codes folder:
 This folder contains R scripts used for the analyses, figures and tables presented in both the main paper and the supplementary appendix.
