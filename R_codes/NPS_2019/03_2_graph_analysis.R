@@ -1612,7 +1612,7 @@ dev.off()
 
 
 
-# Other Graphs -----------------------------------------------------
+# Appendix Figures 2.b  -----------------------------------------------------
 
 
 tza_info <- read_csv(file.path(dir[["tza_processed"]], "clean_tanzania_2019.csv")) %>% 
@@ -1641,7 +1641,7 @@ tza_et <-
 
 
 
-## Appendix Figures A2b ----------------------------------------------------
+## Appendix Figures A2.b ----------------------------------------------------
 
 
 tza_et_UR <-
@@ -1716,7 +1716,7 @@ plot_5br <- ggplot(tza_et_r,
     labels = scales::percent_format(accuracy = 1)
   ) +
   theme(
-    axis.text.y = element_text(size = 12),
+    axis.text.y = element_blank(),
     axis.text.x = element_text(size = 12),
     axis.title  = element_text(size = 12),
     plot.title  = element_text(size = 15, hjust = 0.5,face = "bold"),
@@ -1724,14 +1724,15 @@ plot_5br <- ggplot(tza_et_r,
     strip.text = element_text(size = 12),
     panel.grid.major = element_line(linewidth = 0.3),
     panel.grid.minor = element_blank(),
-    axis.ticks = element_line(linewidth = 0.2),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_line(linewidth = 0.5),
     legend.text = element_text(size = 12),
     legend.title = element_text(size = 12),
     plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"),
     panel.border = element_rect(linewidth = 0.3)
   )+
   scale_x_discrete(labels = c("1", "2", "3", "4", "5")) +
-  ylab("Share of total Expenditure (%)") +
+  ylab("") +
   xlab("") +
   ggtitle("Rural") +
   guides(colour = guide_legend(nrow = 1), fill = guide_legend(nrow = 1))
@@ -1817,6 +1818,14 @@ plot_5bu
 # Combine plots
 
 combine <- ggarrange(plot_5bu,plot_5br, legend="bottom",common.legend=T)
+
+combine <- annotate_figure(combine, 
+                           bottom = text_grob("Expenditure Quintile", 
+                                              size = 14, 
+                                              hjust = 0.5,
+                                              vjust = -3.6)
+)
+
 
 combine
 
