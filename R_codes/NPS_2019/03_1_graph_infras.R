@@ -153,7 +153,16 @@ plot_b
 
 combine <- ggarrange(plot_b,plot_a, legend="bottom",common.legend=T)
 
+combine <- annotate_figure(combine, 
+                           bottom = text_grob("Expenditure Quintile", 
+                                              size = 14, 
+                                              hjust = 0.5,
+                                              vjust = -3.6)
+)
+
+
 combine
+
 
 # save plot
 png(filename= file.path(dir[["figures"]], "Figure_1.png"), 
@@ -297,7 +306,16 @@ combine <- ggarrange(plot_lg_b,plot_lg_a,
                      legend="bottom",
                      legend.grob=legend_a)
 
+combine <- annotate_figure(combine, 
+                           bottom = text_grob("Expenditure Quintile", 
+                                              size = 14, 
+                                              hjust = 0.5,
+                                              vjust = -3.6)
+)
+
+
 combine
+
 
 # save plot
 png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1a.png"), 
@@ -429,7 +447,16 @@ plot_ow_b
 
 combine <- ggarrange(plot_ow_b,plot_ow_a, legend="bottom", common.legend=T)
 
+combine <- annotate_figure(combine, 
+                           bottom = text_grob("Expenditure Quintile", 
+                                              size = 14, 
+                                              hjust = 0.5,
+                                              vjust = -3.6)
+)
+
+
 combine
+
 
 # save plot
 png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1b.png"), 
@@ -562,7 +589,16 @@ legend_a <- get_legend(plot_ck_b)
 
 combine <- ggarrange(plot_ck_b,plot_ck_a, legend="bottom",legend.grob=legend_a)
 
+combine <- annotate_figure(combine, 
+                           bottom = text_grob("Expenditure Quintile", 
+                                              size = 14, 
+                                              hjust = 0.5,
+                                              vjust = -3.6)
+)
+
+
 combine
+
 
 # save plot
 png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1c.png"), 
@@ -708,7 +744,16 @@ plot_tt_b
 
 combine <- ggarrange(plot_tt_b,plot_tt_a, legend="bottom", common.legend = T)
 
+combine <- annotate_figure(combine, 
+                           bottom = text_grob("Expenditure Quintile", 
+                                              size = 14, 
+                                              hjust = 0.5,
+                                              vjust = -3.6)
+)
+
+
 combine
+
 
 # save plot
 png(filename= file.path(dir[["figures"]], "Appendix_Figure_A1d.png"), 
