@@ -1,6 +1,6 @@
-# Using Carbon Pricing Revenues to Empower Low-Income Households with Renewable Energy: Evidence from Tanzania 
+# Using Carbon Pricing Revenues to Empower Low-Income Households with Renewable Energy: A Distributional Analysis for Tanzania
 
-  - This repository contains code and supplementary data for the study "Using Carbon Pricing Revenues to Empower Low-Income Households with Renewable Energy: Evidence from Tanzania" by Asare and Schürer.
+  - This repository contains code and supplementary data for the study "Using Carbon Pricing Revenues to Empower Low-Income Households with Renewable Energy: A Distributional Analysis for Tanzania" by Asare and Schürer.
 
 ## Data_files folder:
   - GTAP_matching_categories.xlsx: provides the classification of item codes into consumption categories, including food, goods, energy, and services.
